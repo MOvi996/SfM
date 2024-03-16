@@ -10,11 +10,11 @@ class Dataset:
 
     def __init__(self, path_to_directory):
 
-        self.path       = path_to_directory
-        self.img_path   = os.path.join(self.path, "images")
-        self.corr_path  = os.path.join(self.path, "correspondences")
-        self.cam_path   = glob.glob(f"{self.path}/*.json")[0]
-
+        self.path        = path_to_directory
+        self.img_path    = os.path.join(self.path, "images")
+        self.corr_path   = os.path.join(self.path, "correspondences")
+        self.cam_path    = glob.glob(f"{self.path}/*.json")[0]
+        self.images      = []
         
 
     def load_data(self):
@@ -29,15 +29,17 @@ class Dataset:
         
         self.images_index = dict()
         self.N_images     = len(self.image_files)
-
+        self.count_graph  = np.zeros((self.N_images, self.N_images))
         self.visibility = np.empty((0,self.N_images))
         self.points     = np.empty((0,self.N_images, 2))
         self.colors     = np.empty((0,3), dtype= np.uint8)
 
         for i,image in enumerate(self.image_files):
-    
-            self.images_index[int(image.split("/")[-1][:-4])] = i
-
+            
+            image_id = int(image.split("/")[-1][:-4])
+            self.images_index[image_id] = i
+            self.images.append(image_id)
+            
 
         for f in self.correspondence_files:
     
@@ -49,10 +51,14 @@ class Dataset:
             
             img2_index = self.images_index[img2]
             
+            
             data = np.loadtxt(f)
             _, indices = np.unique(data, axis = 0, return_index= True)
             data = data[np.sort(indices)]
-    
+            
+            self.count_graph[img1_index, img2_index] = data.shape[0]
+            self.count_graph[img2_index, img1_index] = data.shape[0]
+            
             img1_points = np.fliplr(data[:,:2])
             img2_points = np.fliplr(data[:,2:])
 
@@ -111,3 +117,49 @@ class Dataset:
                 self.points     = np.vstack([self.points, new_keypoints])
                 self.colors     = np.vstack([self.colors, colors_new])
         
+    def computeSceneGraph(self):
+        
+        images_to_add = []
+        appended_ids  = []
+
+        for iteration in range(self.N_images - 1):
+
+            if iteration == 0:
+                max_ind = np.array((self.count_graph == self.count_graph.max()).nonzero())
+
+                if max_ind.shape[1] > 2:
+                    selected_id = np.argmax(np.abs(max_ind[1,:] - max_ind[0,:]))
+                else:
+                    selected_id = 0
+
+                id_one = max_ind[0,selected_id]
+                id_two = max_ind[1,selected_id]
+                images_to_add.append(self.images[id_one])
+                images_to_add.append(self.images[id_two])
+                appended_ids.append(id_one)
+                appended_ids.append(id_two)
+                self.count_graph[id_one, id_two] = 0
+                self.count_graph[id_two, id_one] = 0
+            else:
+
+                sub_graph = self.count_graph[:,appended_ids]
+                max_ind = np.array((sub_graph == sub_graph.max()).nonzero())
+
+                if max_ind.shape[1] > 2:
+                    selected_id = np.argmax(np.abs(max_ind[1,:] - max_ind[0,:]))
+                else:
+                    selected_id = 0
+            
+                id_one = max_ind[0, selected_id]
+                id_two = appended_ids[max_ind[1,selected_id]]
+            
+                images_to_add.append(self.images[id_one])
+            
+                appended_ids.append(id_one)
+            
+                for ids in appended_ids[:-1]:
+
+                    self.count_graph[id_one, ids] = 0
+                    self.count_graph[ids, id_one] = 0
+
+        return images_to_add, appended_ids
