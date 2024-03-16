@@ -3,6 +3,7 @@ import cv2
 import glob 
 import os 
 from natsort import natsorted
+import json 
 
 
 class Dataset:
@@ -17,7 +18,12 @@ class Dataset:
         
 
     def load_data(self):
+        
+        with open(self.cam_path) as json_data:
+            camera_parameters = json.load(json_data)
+            json_data.close()
 
+        self.K = np.array(camera_parameters['intrinsics'])
         self.correspondence_files = natsorted(glob.glob(f"{self.corr_path}/*"))
         self.image_files          = natsorted(glob.glob(f"{self.img_path}/*"))
         
