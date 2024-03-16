@@ -8,13 +8,16 @@ def to_homogeneous(points_2d):
     return np.hstack([points_2d, np.ones((points_2d.shape[0],1))])
 
 
+
 def compute_normalization_transform_2D(homogeneous_2D):
 
-    centroid, scale = np.mean(homogeneous_2D[:,:2], axis = 0), np.std(homogeneous_2D[:,:2])
-    scale = np.sqrt(2) / scale
+    centroid   = np.mean(homogeneous_2D[:,:2], axis = 0)
+    scale_orig = ((homogeneous_2D[:,:2] - centroid[None])**2).sum(axis = 1).mean()
+    scale = np.sqrt(2 / scale_orig)
 
     transformation = np.array([[scale,0, -(scale*centroid[0])],[0, scale, -(scale*centroid[1])], [0,0,1]])
     return transformation
+
 
 def compute_normalization_transform_3D(homogeneous_3D):
 
@@ -38,8 +41,7 @@ def reprojection_error(x,X_homo, K,R,C):
     proj    = np.matmul(P, X_homo.T).T
     proj    = proj / proj[:,2][...,None]
     proj_2d = proj[:,:2]
-    
-    error = ((x - proj_2d)**2).sum(axis = 1)
+    error = np.linalg.norm((x - proj_2d), axis =1)
     return error.mean()
 
 def DLT_PnP(points_2d, points_3d, K):
@@ -81,7 +83,7 @@ def DLT_PnP(points_2d, points_3d, K):
             R = -R
             C = -C
         
-        error = reprojection_error(points_2d[points], homogenous_3d, K,R,C)
+        error = reprojection_error(points_2d, points_3d_homogeneous, K,R,C)
 
         if error < best_criterion:
             best_criterion = error
@@ -97,10 +99,10 @@ def DLT_PnP(points_2d, points_3d, K):
     
 def estimate_fundamental_matrix(x_prime, x):
 
+
     x_prime_homogeneous = to_homogeneous(x_prime)
     x_homogeneous       = to_homogeneous(x)
 
-    
     transform_x_prime = compute_normalization_transform_2D(x_prime_homogeneous)
     transform_x       = compute_normalization_transform_2D(x_homogeneous)
 
@@ -110,15 +112,15 @@ def estimate_fundamental_matrix(x_prime, x):
     A = np.zeros((N_points, 9))
 
     for p in range(N_points):
-        A[p,:] = np.kron(x_prime_camera_norm[p], x_camera_norm[p])
-    
+        A[p,:] = np.kron(x_camera_norm[p], x_prime_camera_norm[p])
+
     U,S,Vh = np.linalg.svd(A)
     F_norm = Vh[-1].reshape(3,3)
     Uf, Sf, Vf = np.linalg.svd(F_norm)
     Sf[-1] = 0
     F_norm_corrected = Uf @ np.diag(Sf) @ Vf
 
-    F = np.matmul(transform_x_prime.T, np.matmul(F_norm_corrected, transform_x))
+    F = np.matmul(transform_x.T, np.matmul(F_norm_corrected, transform_x_prime))
 
     return F / F[2,2]    
 
@@ -131,7 +133,6 @@ def estimateEssentialFromFundamental(fundamental, k):
     return E_estimated / E_estimated[2,2]
 
 def estimate_essential_matrix(pts1, pts2, K):
-
 
     N_points = pts1.shape[0]
     if N_points == 8:
@@ -157,7 +158,7 @@ def estimate_essential_matrix(pts1, pts2, K):
         A = np.zeros((8, 9))
 
         for p in range(8):
-            A[p,:] = np.kron(x_prime_camera[p], x_camera[p])
+            A[p,:] = np.kron(x_camera[p], x_prime_camera[p])
     
         U,S,Vh = np.linalg.svd(A)
         E_norm = Vh[-1].reshape(3,3)
@@ -166,9 +167,7 @@ def estimate_essential_matrix(pts1, pts2, K):
         Se = [1, 1, 0]
 
         E = Ue @ np.diag(Se) @ Ve
-        E = E / E[2,2]   
-        
-        criterion = np.sum(np.abs((pts1_camera.T * (E @ pts2_camera.T)).sum(axis = 0)) < 0.001)
+        criterion = np.sum(np.abs((pts2_camera.T * (E @ pts1_camera.T)).sum(axis = 0)) < 0.001)
         if criterion > best_criterion:
             best_criterion = criterion
             best_matrix = E
@@ -182,7 +181,7 @@ def extract_cam_pose(E, K):
     :param w_matrix: a 3x3 matrix that is multiplied with essential matrix
     :return: Rotation and translation matrices
     """
-    print(E.shape)
+    
     U, S, V_T = np.linalg.svd(E)
 
     R = []
