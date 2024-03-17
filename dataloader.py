@@ -59,8 +59,8 @@ class Dataset:
             self.count_graph[img1_index, img2_index] = data.shape[0]
             self.count_graph[img2_index, img1_index] = data.shape[0]
             
-            img1_points = np.fliplr(data[:,:2])
-            img2_points = np.fliplr(data[:,2:])
+            img1_points = data[:,:2]
+            img2_points = data[:,2:]
 
             if self.visibility_new.shape[0] != 0:
         
@@ -86,7 +86,7 @@ class Dataset:
                         k_new[0,img2_index,:] = img2_points[p]
                 
                         new_keypoints.append(k_new)
-                        new_colors.append(image_one[int(img1_points[p,0]),int(img1_points[p,1])][None])
+                        new_colors.append(image_one[int(img1_points[p,1]),int(img1_points[p,0])][None])
                         new_2d_viz.append(v_2d_new)
 
                     elif len(index) > 0:
@@ -122,7 +122,7 @@ class Dataset:
                 new_keypoints[:,img2_index,:] = img2_points
 
                 image_coords = img1_points.astype(np.int32)
-                colors_new = image_one[image_coords[:,0],image_coords[:,1]]
+                colors_new = image_one[image_coords[:,1],image_coords[:,0]]
         
                 self.points         = np.vstack([self.points, new_keypoints])
                 self.colors         = np.vstack([self.colors, colors_new])

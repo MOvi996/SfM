@@ -94,7 +94,9 @@ def DLT_PnP(points_2d, points_3d, K):
             
         
 
+def projectionMatrix4x4(projection_matrix):
 
+    return np.vstack([projection_matrix, np.array([0,0,0,1])])
     
     
 def estimate_fundamental_matrix(x_prime, x):
@@ -174,45 +176,7 @@ def estimate_essential_matrix(pts1, pts2, K):
     
     return best_matrix, best_criterion
 
-def extract_cam_pose(E, K):
-    """
-    function to obtain Rotation and Translation
-    :param essential_matrix: a 3x3 matrix
-    :param w_matrix: a 3x3 matrix that is multiplied with essential matrix
-    :return: Rotation and translation matrices
-    """
-    
-    U, S, V_T = np.linalg.svd(E)
 
-    R = []
-    C = []
-
-    # rotation matrices
-    R.append(np.dot(U, np.dot(np.array([[0, -1, 0],
-                  [1,  0, 0],
-                  [0,  0, 1]]), V_T)))
-    R.append(np.dot(U, np.dot(np.array([[0, -1, 0],
-                  [1,  0, 0],
-                  [0,  0, 1]]), V_T)))
-    R.append(np.dot(U, np.dot(np.array([[0, -1, 0],
-                  [1,  0, 0],
-                  [0,  0, 1]]).T, V_T)))
-    R.append(np.dot(U, np.dot(np.array([[0, -1, 0],
-                  [1,  0, 0],
-                  [0,  0, 1]]).T, V_T)))
-
-    #  translation matrices
-    C.append(U[:, 2])
-    C.append(-U[:, 2])
-    C.append(U[:, 2])
-    C.append(-U[:, 2])
-
-    for i in range(4):
-        if (np.linalg.det(R[i]) < 0):
-            R[i] = -R[i]
-            C[i] = -C[i]
-
-    return R, C
 
 def decomposeEssentialMat(E):
 
