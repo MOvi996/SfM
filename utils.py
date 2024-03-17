@@ -259,7 +259,7 @@ def decomposeEssentialMat(E):
     return rotations, translations
 
 def computeProjectionMatrix(K,R,C):
-    
+
     C = np.reshape(C, (3, 1))        
     I = np.identity(3)
     P = np.dot(K, np.dot(R, np.hstack((I, -C))))
