@@ -19,28 +19,28 @@ def compute_normalization_transform_2D(homogeneous_2D):
     return transformation
 
 
-def compute_normalization_transform_3D(homogeneous_3D):
-
-    centroid, scale = np.mean(homogeneous_3D[:,:3], axis = 0), np.std(homogeneous_3D[:,:3])
-    scale = np.sqrt(3) / scale
-
-    transformation = np.array([[scale,0, 0, -(scale*centroid[0])],[0, scale,0, -(scale*centroid[1])], [0,0,scale, -(scale*centroid[2])], [0,0,0,1]])
-    return transformation
-
-
 def apply_K_inv(K_inv, homogenous_points):
     return np.dot(K_inv, homogenous_points.T).T
 
 def normalize_points(transform, homogenous_points):
     return np.dot(transform, homogenous_points.T).T
 
+
+def projectPoint(P,X):
+
+    if X.shape[1] == 3:
+        X = to_homogeneous(X)
+
+    x_proj = np.matmul(P, X.T).T
+    x_proj = x_proj / x_proj[:,2][...,None]
+    return x_proj
+
+
 def reprojection_error(x,X_homo, K,R,C):
 
     P = computeProjectionMatrix(K,R,C)
 
-    proj    = np.matmul(P, X_homo.T).T
-    proj    = proj / proj[:,2][...,None]
-    proj_2d = proj[:,:2]
+    proj_2d = projectPoint(P, X_homo)[:,:2]
     error = np.linalg.norm((x - proj_2d), axis =1)
     return error.mean()
 
