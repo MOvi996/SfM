@@ -12,7 +12,7 @@ class Dataset:
 
         self.path        = path_to_directory
         self.img_path    = os.path.join(self.path, "images")
-        self.corr_path   = os.path.join(self.path, "correspondences")
+        self.corr_path   = os.path.join(self.path, corr_dir)
         self.cam_path    = glob.glob(f"{self.path}/*.json")[0]
         self.images      = []
 
@@ -40,8 +40,10 @@ class Dataset:
             self.images_index[image_id] = i
             self.images.append(image_id)
             
-
         for f in self.correspondence_files:
+
+            if "distances" in f:
+                continue
             img1, img2 = [int(x) for x in f.split("/")[-1][:-4].split("_")]
 
     

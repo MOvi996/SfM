@@ -26,7 +26,7 @@ class SFM:
         
         self.data     = Dataset(self.datapath, corr_dir=self.config["corr_folder"])
         self.data.load_data()
-    
+        self.BA = self.config["run_BA"]
         self.camera_visibility = self.data.visibility_new.any(axis = 1).astype(np.float64)
 
         if self.config["sceneGraph"]:
@@ -105,7 +105,7 @@ class SFM:
                 reconstructed_ind[indices_new] = 1
 
 
-            if next_image == self.data.N_images - 1:
+            if next_image == self.data.N_images - 1 and self.BA:
                 max_eval = 3
                 X_reconstructed,camera_rotations,camera_translations = bundleAdjustmentLM(X_reconstructed,reconstructed_ind,
                                                                                 self.data.points,self.camera_visibility,camera_rotations,

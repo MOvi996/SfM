@@ -2,7 +2,24 @@ from scipy.spatial.transform import Rotation
 from scipy.optimize import least_squares
 from utils import *
 
-def bundleAdjustmentLM(X_reconstructed, reconstructed_ind, points_2d, visibility, camera_rotations, camera_translations, K, num_views, appended_ids, max_eval = 3000):
+def is_list_of_lists(obj):
+    # Check if the object is a list
+    if isinstance(obj, list):
+        # Check if every item in the list is also a list
+        return all(isinstance(item, list) for item in obj)
+    # If obj is not a list, return False
+    return False
+
+def flatten_list_of_lists(obj):
+    # if is_list_of_lists(obj):
+    #     # It's a list of lists, so flatten it
+    #     return [item for sublist in obj for item in sublist]
+    # else:
+    #     # It's not a list of lists, return the original object
+    #     return obj
+    return [item for sublist in obj for item in sublist]
+
+def bundleAdjustmentLM(X_reconstructed, reconstructed_ind, points_2d, visibility, camera_rotations, camera_translations, K, num_views, appended_ids, max_eval = 3):
 
     indices = (reconstructed_ind == 1)
     X_3d    = X_reconstructed[indices[:,0]]
@@ -11,10 +28,20 @@ def bundleAdjustmentLM(X_reconstructed, reconstructed_ind, points_2d, visibility
     for i in range(num_views):
         R, C = camera_rotations[i], camera_translations[i]
         rotvec = Rotation.from_matrix(R).as_rotvec()
-        RC = [rotvec[0], rotvec[1], rotvec[2], C[0], C[1], C[2]]
-        cam_param_list.append(RC)
+        
+        if isinstance(C[0], np.ndarray):
+            C = C.ravel()
+        
+        if isinstance(rotvec[0], np.ndarray):
+            rotvec = rotvec.ravel()
 
-    cam_param_list = np.array(cam_param_list).reshape(-1, 6)
+        RC = np.array([rotvec[0], rotvec[1], rotvec[2], C[0], C[1], C[2]])    
+                                                        
+        cam_param_list.append(RC[None])
+
+
+    cam_param_list = np.concatenate(cam_param_list) #.reshape(-1, 6)
+    
     x0 = np.hstack((cam_param_list.ravel(), X_3d.ravel()))
 
 
