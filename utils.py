@@ -7,8 +7,6 @@ def to_homogeneous(points_2d):
 
     return np.hstack([points_2d, np.ones((points_2d.shape[0],1))])
 
-
-
 def compute_normalization_transform_2D(homogeneous_2D):
 
     centroid   = np.mean(homogeneous_2D[:,:2], axis = 0)
@@ -18,13 +16,11 @@ def compute_normalization_transform_2D(homogeneous_2D):
     transformation = np.array([[scale,0, -(scale*centroid[0])],[0, scale, -(scale*centroid[1])], [0,0,1]])
     return transformation
 
-
 def apply_K_inv(K_inv, homogenous_points):
     return np.dot(K_inv, homogenous_points.T).T
 
 def normalize_points(transform, homogenous_points):
     return np.dot(transform, homogenous_points.T).T
-
 
 def projectPoint(P,X):
 
@@ -92,8 +88,7 @@ def DLT_PnP(points_2d, points_3d, K):
 
     return best_R, best_C
             
-        
-
+    
 def projectionMatrix4x4(projection_matrix):
 
     return np.vstack([projection_matrix, np.array([0,0,0,1])])
@@ -134,7 +129,7 @@ def estimateEssentialFromFundamental(fundamental, k):
 
     return E_estimated / E_estimated[2,2]
 
-def estimate_essential_matrix(pts1, pts2, K):
+def estimate_essential_matrix_RANSAC(pts1, pts2, K):
 
     N_points = pts1.shape[0]
     if N_points == 8:
@@ -175,8 +170,6 @@ def estimate_essential_matrix(pts1, pts2, K):
             best_matrix = E
     
     return best_matrix, best_criterion
-
-
 
 def decomposeEssentialMat(E):
 
@@ -245,7 +238,6 @@ def skew_symmetric_matrix(vector):
     skew_matrix[:,2,1] =  vector[:,0]
     
     return skew_matrix
-
 
 def linearTriangulation(pts1, pts2, projection_matrix1, projection_matrix2):
 

@@ -6,7 +6,7 @@ from stage2_config import *
 
 
 class Correspondence_Extractor:
-    def __init__(self, parent_dir, img_dir='images', stage=2):
+    def __init__(self, parent_dir, target_folder="estimated_correspondences", img_dir='images', stage=2):
 
         self.img_dir = f'{parent_dir}/{img_dir}'
         print(os.path.exists(self.img_dir))
@@ -25,7 +25,7 @@ class Correspondence_Extractor:
 
         # os.makedirs(self.target_folder, exist_ok=True)
     
-    def get_corr_pairs(self, start_index, end_index):
+    def get_corr_pairs(self, start_index, end_index, min_matches=50):
 
         os.makedirs(self.target_folder, exist_ok=True)
 
@@ -54,24 +54,26 @@ class Correspondence_Extractor:
                     if kp1 is None or kp2 is None or matches is None:
                         print(f'No matches found between {self.img_list[i]} and {self.img_list[j]}')
                         continue
+
+                    if len(matches) >= min_matches:
                     
-                    # save matches in txt file. Overwrite if file already exists
-                    with open(f'{self.target_folder}/{self.img_names[i]}_{self.img_names[j]}.txt', 'w') as f:
-                        for match in matches:
-                                pts1 = np.array(kp1[int(match[0])].pt)
-                                pts2 = np.array(kp2[int(match[1])].pt)
-                                if FLIP:
-                                    pts1 = np.flip(pts1)
-                                    pts2 = np.flip(pts2)
-                                f.write(f'{pts1[0]} {pts1[1]} {pts2[0]} {pts2[1]}\n')
-                    
-                    # save distances in txt file
-                    with open(f'{self.target_folder}/{self.img_names[i]}_{self.img_names[j]}_distances.txt', 'w') as f:
-                        for match in matches:
-                            f.write(f'{match[2]}\n')
+                        # save matches in txt file. Overwrite if file already exists
+                        with open(f'{self.target_folder}/{self.img_names[i]}_{self.img_names[j]}.txt', 'w') as f:
+                            for match in matches:
+                                    pts1 = np.array(kp1[int(match[0])].pt)
+                                    pts2 = np.array(kp2[int(match[1])].pt)
+                                    if FLIP:
+                                        pts1 = np.flip(pts1)
+                                        pts2 = np.flip(pts2)
+                                    f.write(f'{pts1[0]} {pts1[1]} {pts2[0]} {pts2[1]}\n')
+                        
+                        # save distances in txt file
+                        with open(f'{self.target_folder}/{self.img_names[i]}_{self.img_names[j]}_distances.txt', 'w') as f:
+                            for match in matches:
+                                f.write(f'{match[2]}\n')
 
 
 
 if __name__ == "__main__":
-    ce = Correspondence_Extractor('stage3/', img_dir='rgb', stage=3 )
+    ce = Correspondence_Extractor('stage2/milk')
     ce.get_corr_pairs(start_index, end_index)

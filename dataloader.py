@@ -8,15 +8,14 @@ import json
 
 class Dataset:
 
-    def __init__(self, path_to_directory, corr_dir = "correspondences"):
+    def __init__(self, path_to_directory, corr_dir="correspondences"):
 
         self.path        = path_to_directory
         self.img_path    = os.path.join(self.path, "images")
-        self.corr_path   = os.path.join(self.path, corr_dir)
+        self.corr_path   = os.path.join(self.path, "correspondences")
         self.cam_path    = glob.glob(f"{self.path}/*.json")[0]
         self.images      = []
 
-        
 
     def load_data(self):
         
@@ -43,13 +42,14 @@ class Dataset:
             
 
         for f in self.correspondence_files:
-            if "distances" in f:
-                continue
             img1, img2 = [int(x) for x in f.split("/")[-1][:-4].split("_")]
-            
+
+    
             img1_index = self.images_index[img1]
             image_one = cv2.imread(self.image_files[img1_index])
             image_one = cv2.cvtColor(image_one, cv2.COLOR_BGR2RGB)
+
+            h, w = image_one.shape[:2]
             
             img2_index = self.images_index[img2]
 
@@ -88,7 +88,13 @@ class Dataset:
                         k_new[0,img2_index,:] = img2_points[p]
                 
                         new_keypoints.append(k_new)
-                        new_colors.append(image_one[int(img1_points[p,1]),int(img1_points[p,0])][None])
+                        x,y = int(img1_points[p,1]),int(img1_points[p,0])
+                        if x > h:
+                            x = h -1
+                        if y > w:
+                            y = w -1
+
+                        new_colors.append(image_one[x,y][None])
                         new_2d_viz.append(v_2d_new)
 
                     elif len(index) > 0:

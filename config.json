@@ -1,0 +1,9 @@
+{
+
+    "datapath":  "Stage_1_Data_ver_4/stage1/boot/",
+    "corr_folder": "correspondences",
+    "computeCorrespondence": false,
+    "sceneGraph": false,
+    "stage": 2
+
+}
