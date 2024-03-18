@@ -112,15 +112,15 @@ class SFM:
                                                                                 camera_translations, self.data.K, next_image +1, self.appended_ids, max_eval= max_eval)
 
         
-            projection_matrix_extrinsic = []
-            I_p = projectionMatrix4x4(computeProjectionMatrix(np.identity(3), camera_rotations[0], camera_translations[0]))
-        
-            projection_matrix_extrinsic.append(I_p)
-            projection_matrix_extrinsic.append(projectionMatrix4x4(computeProjectionMatrix(np.identity(3), camera_rotations[1], camera_translations[1])))
+                projection_matrix_extrinsic = []
+                I_p = projectionMatrix4x4(computeProjectionMatrix(np.identity(3), camera_rotations[0], camera_translations[0]))
+            
+                projection_matrix_extrinsic.append(I_p)
+                projection_matrix_extrinsic.append(projectionMatrix4x4(computeProjectionMatrix(np.identity(3), camera_rotations[1], camera_translations[1])))
 
-            for view in range(2, len(camera_rotations)):
-                current = projectionMatrix4x4(computeProjectionMatrix(np.identity(3), camera_rotations[view], camera_translations[view]))
-                projection_matrix_extrinsic.append(np.matmul(current, projection_matrix_extrinsic[view -1]))
+                for view in range(2, len(camera_rotations)):
+                    current = projectionMatrix4x4(computeProjectionMatrix(np.identity(3), camera_rotations[view], camera_translations[view]))
+                    projection_matrix_extrinsic.append(np.matmul(current, projection_matrix_extrinsic[view -1]))
 
         X = X_reconstructed[(reconstructed_ind == 1)[...,0]]
         C = self.data.colors[(reconstructed_ind == 1)[...,0]]
